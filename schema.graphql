@@ -1,0 +1,117 @@
+enum Handler {
+  Deposit
+  Loan
+}
+
+type Token @entity(immutable: true) {
+  "token address"
+  id: ID!
+  name: String!
+  symbol: String!
+  decimals: BigInt! # uint256
+  "only for ftoken"
+  underlying: Bytes!
+}
+
+type TokenBalance @entity {
+  "token address_account address_handler"
+  id: ID!
+  handler: Handler!
+  amount: BigDecimal!
+  token: Token!
+  user: User!
+}
+
+type EventLength @entity {
+  id: ID!
+  mint: BigInt!
+  redeem: BigInt!
+  borrow: BigInt!
+  repay: BigInt!
+  liquidate: BigInt!
+  transfer: BigInt!
+}
+
+type Mint @entity {
+  "transaction hash+ '_Mint_' + index "
+  id: ID!
+  amount: BigDecimal!
+  underlyingAmount: BigDecimal!
+  token: Token!
+  minter: User!
+  timestamp: BigInt!
+  height: BigInt!
+}
+
+type Redeem @entity {
+  "transaction hash+ '_Redeem_' + index "
+  id: ID!
+  amount: BigDecimal!
+  underlyingAmount: BigDecimal!
+  token: Token!
+  redeemer: User!
+  timestamp: BigInt!
+  height: BigInt!
+}
+
+type Borrow @entity {
+  "transaction hash+ '_Borrow_' + index "
+  id: ID!
+  borrowAmount: BigDecimal!
+  accountBorrows: BigDecimal!
+  totalBorrows: BigDecimal!
+  token: Token!
+  borrower: User!
+  timestamp: BigInt!
+  height: BigInt!
+}
+
+type RepayBorrow @entity {
+  "transaction hash+ '_Repay_' + index "
+  id: ID!
+  repayAmount: BigDecimal!
+  accountBorrows: BigDecimal!
+  totalBorrows: BigDecimal!
+  token: Token!
+  borrower: User!
+  payer: User!
+  timestamp: BigInt!
+  height: BigInt!
+}
+
+type Liquidate @entity {
+  "transaction hash+ '_Liquidate_' + index "
+  id: ID!
+  liquidator: User!
+  borrower: User!
+  repayAmount: BigDecimal!
+  token: Token!
+  collateral: Token!
+  seize: BigDecimal!
+  timestamp: BigInt!
+  height: BigInt!
+}
+
+type Transfer @entity {
+  "transaction hash+ '_Transfer_' + index "
+  id: ID!
+  from: User!
+  to: User!
+  token: Token!
+  amount: BigDecimal!
+  timestamp: BigInt!
+  height: BigInt!
+}
+
+type User @entity {
+  "account address"
+  id: ID!
+  tokenBalances: [TokenBalance!]! @derivedFrom(field: "user")
+  mints: [Mint!]! @derivedFrom(field: "minter")
+  redeems: [Redeem!]! @derivedFrom(field: "redeemer")
+  borrows: [Borrow!]! @derivedFrom(field: "borrower")
+  repays: [RepayBorrow!]! @derivedFrom(field: "borrower")
+  transferIn: [Transfer!]! @derivedFrom(field: "to")
+  transferOut: [Transfer!]! @derivedFrom(field: "from")
+  liquidate: [Liquidate!]! @derivedFrom(field: "borrower")
+}
