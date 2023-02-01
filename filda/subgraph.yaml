@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: Comptroller
-    network: mainnet
+    network: kava
     source:
       abi: Comptroller
-      address: "0xE52792E024697A6be770e5d6F1C455550265B2CD"
-      startBlock: 11008977
+      address: "0xD2CBE89a36df2546eebc71766264e0F306d38196"
+      startBlock: 3225600
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -31,7 +31,7 @@ dataSources:
 templates:
   - kind: ethereum
     name: CToken
-    network: mainnet
+    network: kava
     source:
       abi: CToken
     mapping:
