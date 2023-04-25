@@ -67,7 +67,7 @@ export function handleBorrow(event: Borrow): void {
   borrowEvent.accountBorrows = convertTokenToDecimal(event.params.accountBorrows, token.decimals)
   borrowEvent.totalBorrows = convertTokenToDecimal(event.params.totalBorrows, token.decimals)
   borrowEvent.borrower = user.id
-  borrowEvent.token = token.id
+  borrowEvent.token = ctoken.id
   borrowEvent.timestamp = event.block.timestamp
   borrowEvent.height = event.block.number
   borrowEvent.save()
@@ -83,7 +83,7 @@ export function handleBorrow(event: Borrow): void {
     tokenBalance = new TokenBalance(balanceID)
     tokenBalance.handler = "Loan"
     tokenBalance.user = user.id
-    tokenBalance.token = token.id
+    tokenBalance.token = ctoken.id
     tokenBalance.amount = ZERO_BD
   }
 
@@ -131,7 +131,7 @@ export function handleLiquidateBorrow(event: LiquidateBorrow): void {
   liquidate.repayAmount = convertTokenToDecimal(event.params.repayAmount, underlyingToken.decimals)
   liquidate.liquidator = liquidator.id
   liquidate.borrower = borrower.id
-  liquidate.token = underlyingToken.id
+  liquidate.token = ctoken.id
   liquidate.collateral = collateral.id
   liquidate.timestamp = event.block.timestamp
   liquidate.height = event.block.number
@@ -148,7 +148,7 @@ export function handleLiquidateBorrow(event: LiquidateBorrow): void {
     borrowBalance = new TokenBalance(borrowBalanceID)
     borrowBalance.handler = "Loan"
     borrowBalance.user = borrower.id
-    borrowBalance.token = underlyingToken.id
+    borrowBalance.token = ctoken.id
     borrowBalance.amount = ZERO_BD
   }
   borrowBalance.amount = borrowBalance.amount.minus(convertTokenToDecimal(event.params.repayAmount, underlyingToken.decimals))
@@ -296,7 +296,7 @@ export function handleRepayBorrow(event: RepayBorrow): void {
   repayEvent.repayAmount = convertTokenToDecimal(event.params.repayAmount, token.decimals)
   repayEvent.accountBorrows = convertTokenToDecimal(event.params.accountBorrows, token.decimals)
   repayEvent.totalBorrows = convertTokenToDecimal(event.params.totalBorrows, token.decimals)
-  repayEvent.token = token.id
+  repayEvent.token = ctoken.id
   repayEvent.borrower = user.id
   repayEvent.payer = payer.id
   repayEvent.timestamp = event.block.timestamp
@@ -313,7 +313,7 @@ export function handleRepayBorrow(event: RepayBorrow): void {
     tokenBalance = new TokenBalance(balanceID)
     tokenBalance.handler = "Loan"
     tokenBalance.user = user.id
-    tokenBalance.token = token.id
+    tokenBalance.token = ctoken.id
     tokenBalance.amount = ZERO_BD
   }
 

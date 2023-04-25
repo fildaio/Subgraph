@@ -60,7 +60,7 @@ export function fetchTokenName(tokenAddress: Address): string {
 
 export function fetchTokenDecimals(tokenAddress: Address): BigInt {
   let contract = ERC20.bind(tokenAddress);
-  let decimalValue = null;
+  let decimalValue = 18;
   let decimalResult = contract.try_decimals();
   if (!decimalResult.reverted) {
     decimalValue = decimalResult.value;
