@@ -1,0 +1,23 @@
+
+type Vote @entity {
+  "user address_gauge address_timestamp"
+  id: ID!
+  user: User!
+  timestamp: BigInt!# uint256
+  gauge: Gauge!
+  weight: BigInt!
+  amount: BigInt!
+  roundtime: BigInt!
+}
+
+type Gauge @entity {
+  "gauge contract address"
+  id: ID!
+  type: BigInt!
+}
+
+type User @entity {
+  "account address"
+  id: ID!
+  votes: [Vote!]! @derivedFrom(field: "user")
+}

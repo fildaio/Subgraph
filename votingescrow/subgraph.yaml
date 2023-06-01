@@ -1,0 +1,30 @@
+specVersion: 0.0.7
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: GaugeController
+    network: mainnet
+    source:
+      abi: GaugeController
+      address: "0xE4E9FD769a64F79D9b63090E22ec26Fa5B23b45F"
+      startBlock: 13468159
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Vote
+        - Gauge
+        - User
+      abis:
+        - name: GaugeController
+          file: ./abis/GaugeController.json
+        - name: VotingEscrow
+          file: ./abis/VotingEscrow.json
+      eventHandlers:
+        - event: VoteForGauge(uint256,address,address,uint256)
+          handler: handleVoteForGauge
+        - event: NewGauge(address,int128,uint256)
+          handler: handleNewGauge
+      file: ./src/gaugeController.ts
