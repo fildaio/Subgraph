@@ -1,9 +1,11 @@
 import { BigInt, Address } from "@graphprotocol/graph-ts"
 import {
   Comptroller,
-  MarketListed
+  MarketListed,
+  MarketEntered,
+  MarketExited
 } from "../generated/Comptroller/Comptroller"
-import { Token } from "../generated/schema"
+import { Token, User, MarketStatus } from "../generated/schema"
 import { CToken } from "../generated/templates";
 import {
   fetchTokenSymbol,
@@ -63,4 +65,53 @@ export function handleMarketListed(event: MarketListed): void {
   token.save()
 
   CToken.create(event.params.cToken)
+}
+
+export function handleMarketEntered(event: MarketEntered): void {
+  let userId = event.params.account.toHex()
+  let user = User.load(userId)
+  // user not exist
+  if (!user) {
+    user = new User(userId)
+    user.save()
+  }
+
+  let ctokenId = event.params.cToken.toHex()
+  let ctoken = Token.load(ctokenId)
+  // get ctoken failed,exit
+  if (!ctoken) return
+
+  let id = ctokenId.concat("_").concat(userId)
+  let status = MarketStatus.load(id)
+  if (!status) {
+    status = new MarketStatus(id)
+    status.token = ctoken.id
+    status.user = user.id
+  }
+  status.timestamp = event.block.timestamp
+  status.entered = true
+  status.save()
+}
+
+export function handleMarketExited(event: MarketExited): void {
+  let userId = event.params.account.toHex()
+  let user = User.load(userId)
+  // user not exist
+  if (!user) return
+
+  let ctokenId = event.params.cToken.toHex()
+  let ctoken = Token.load(ctokenId)
+  // get ctoken failed,exit
+  if (!ctoken) return
+
+  let id = ctokenId.concat("_").concat(userId)
+  let status = MarketStatus.load(id)
+  if (!status) {
+    status = new MarketStatus(id)
+    status.token = ctoken.id
+    status.user = user.id
+  }
+  status.timestamp = event.block.timestamp
+  status.entered = false
+  status.save()
 }

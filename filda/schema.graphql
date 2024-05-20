@@ -64,6 +64,7 @@ type Borrow @entity {
   borrower: User!
   timestamp: BigInt!
   height: BigInt!
+  txhash: String!
 }
 
 type RepayBorrow @entity {
@@ -114,4 +115,37 @@ type User @entity {
   transferIn: [Transfer!]! @derivedFrom(field: "to")
   transferOut: [Transfer!]! @derivedFrom(field: "from")
   liquidate: [Liquidate!]! @derivedFrom(field: "borrower")
+  tokenInterests: [TokenInterest!]! @derivedFrom(field: "user")
+  accrueInterests: [AccrueInterest!]! @derivedFrom(field: "user")
+  marketStatuses: [MarketStatus!]! @derivedFrom(field: "user")
+}
+
+type AccrueInterest @entity {
+  "transaction hash"
+  id: ID!
+  cashPrior: BigInt!
+  interestAccumulated: BigInt!
+  borrowIndex: BigInt!
+  totalBorrows: BigInt!
+  timestamp: BigInt!
+  token: Token!
+  user: User!
+}
+
+type TokenInterest @entity {
+  "ctoken address_user address"
+  id: ID!
+  token: Token!
+  borrowIndex: BigInt!
+  timestamp: BigInt!
+  user: User!
+}
+
+type MarketStatus @entity {
+  "ctoken address_user address"
+  id: ID!
+  token: Token!
+  user: User!
+  timestamp: BigInt!
+  entered: Boolean
 }

@@ -6,7 +6,8 @@ import {
   Mint,
   Redeem,
   RepayBorrow,
-  Transfer
+  Transfer,
+  AccrueInterest
 } from "../generated/templates/CToken/CToken"
 import {
   Token,
@@ -18,7 +19,9 @@ import {
   Liquidate,
   Transfer as TransferEvent,
   EventLength,
-  User
+  User,
+  AccrueInterest as AccrueInEvent,
+  TokenInterest
 } from "../generated/schema"
 import {
   fetchTokenSymbol,
@@ -34,6 +37,35 @@ import {
 } from './helper'
 
 const EVENT_LENGTH_ID = "event length"
+
+function updateTokenInterest(event: Borrow): void {
+  let accrueIn = AccrueInEvent.load(event.transaction.hash.toHex())
+  if (!accrueIn) {
+    return
+  }
+
+  let userId = event.params.borrower.toHex()
+  let user = User.load(userId)
+  // user not exist
+  if (!user) {
+    user = new User(userId)
+    user.save()
+  }
+
+  let id = event.address.toHex().concat("_").concat(userId)
+  let tokenInterest = TokenInterest.load(id)
+  if (!tokenInterest) {
+    let ctoken = Token.load(event.address.toHex())
+    if (!ctoken) return
+
+    tokenInterest = new TokenInterest(id)
+    tokenInterest.user = user.id
+    tokenInterest.token = ctoken.id
+  }
+  tokenInterest.borrowIndex = accrueIn.borrowIndex
+  tokenInterest.timestamp = accrueIn.timestamp
+  tokenInterest.save()
+}
 
 export function handleBorrow(event: Borrow): void {
   let user = User.load(event.params.borrower.toHex())
@@ -70,6 +102,7 @@ export function handleBorrow(event: Borrow): void {
   borrowEvent.token = ctoken.id
   borrowEvent.timestamp = event.block.timestamp
   borrowEvent.height = event.block.number
+  borrowEvent.txhash = event.transaction.hash.toHex()
   borrowEvent.save()
 
   eventLength.borrow = eventLength.borrow.plus(ONE_BI)
@@ -89,6 +122,8 @@ export function handleBorrow(event: Borrow): void {
 
   tokenBalance.amount = convertTokenToDecimal(event.params.accountBorrows, token.decimals)
   tokenBalance.save()
+
+  updateTokenInterest(event)
 }
 
 export function handleLiquidateBorrow(event: LiquidateBorrow): void {
@@ -393,3 +428,25 @@ export function handleTransfer(event: Transfer): void {
   eventLength.transfer = eventLength.transfer.plus(ONE_BI)
   eventLength.save()
 }
+
+export function handleAccrueInterest(event: AccrueInterest): void {
+  let token = Token.load(event.address.toHex())
+  if (!token) return
+
+  let user = User.load(event.transaction.from.toHexString())
+  if (!user) {
+    user = new User(event.transaction.from.toHexString())
+    user.save()
+  }
+
+  let accrueIn = new AccrueInEvent(event.transaction.hash.toHex())
+  accrueIn.cashPrior = event.params.cashPrior
+  accrueIn.interestAccumulated = event.params.interestAccumulated
+  accrueIn.borrowIndex = event.params.borrowIndex
+  accrueIn.totalBorrows = event.params.totalBorrows
+  accrueIn.timestamp = event.block.timestamp
+  accrueIn.token = token.id
+  accrueIn.user = user.id
+  accrueIn.save()
+}
+

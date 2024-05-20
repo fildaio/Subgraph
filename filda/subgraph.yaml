@@ -27,6 +27,10 @@ dataSources:
       eventHandlers:
         - event: MarketListed(address)
           handler: handleMarketListed
+        - event: MarketEntered(address,address)
+          handler: handleMarketEntered
+        - event: MarketExited(address,address)
+          handler: handleMarketExited
       file: ./src/comptroller.ts
 templates:
   - kind: ethereum
@@ -60,4 +64,6 @@ templates:
           handler: handleRepayBorrow
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
+        - event: AccrueInterest(uint256,uint256,uint256,uint256)
+          handler: handleAccrueInterest
       file: ./src/ctoken.ts
