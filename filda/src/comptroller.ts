@@ -3,9 +3,11 @@ import {
   Comptroller,
   MarketListed,
   MarketEntered,
-  MarketExited
+  MarketExited,
+  DistributedBorrowerComp,
+  DistributedSupplierComp
 } from "../generated/Comptroller/Comptroller"
-import { Token, User, MarketStatus } from "../generated/schema"
+import { Token, MarketStatus } from "../generated/schema"
 import { CToken } from "../generated/templates";
 import {
   fetchTokenSymbol,
@@ -18,6 +20,11 @@ import {
   BI_18,
   WETHER
 } from './helper'
+
+import {
+  getUser,
+  updateCompRewards
+} from "./entities/user"
 
 export function handleMarketListed(event: MarketListed): void {
   // Entities can be loaded from the store using a string ID; this ID
@@ -68,20 +75,14 @@ export function handleMarketListed(event: MarketListed): void {
 }
 
 export function handleMarketEntered(event: MarketEntered): void {
-  let userId = event.params.account.toHex()
-  let user = User.load(userId)
-  // user not exist
-  if (!user) {
-    user = new User(userId)
-    user.save()
-  }
+  let user = getUser(event.params.account)
 
   let ctokenId = event.params.cToken.toHex()
   let ctoken = Token.load(ctokenId)
   // get ctoken failed,exit
   if (!ctoken) return
 
-  let id = ctokenId.concat("_").concat(userId)
+  let id = ctokenId.concat("_").concat(event.params.account.toHex())
   let status = MarketStatus.load(id)
   if (!status) {
     status = new MarketStatus(id)
@@ -94,17 +95,14 @@ export function handleMarketEntered(event: MarketEntered): void {
 }
 
 export function handleMarketExited(event: MarketExited): void {
-  let userId = event.params.account.toHex()
-  let user = User.load(userId)
-  // user not exist
-  if (!user) return
+  let user = getUser(event.params.account)
 
   let ctokenId = event.params.cToken.toHex()
   let ctoken = Token.load(ctokenId)
   // get ctoken failed,exit
   if (!ctoken) return
 
-  let id = ctokenId.concat("_").concat(userId)
+  let id = ctokenId.concat("_").concat(event.params.account.toHex())
   let status = MarketStatus.load(id)
   if (!status) {
     status = new MarketStatus(id)
@@ -114,4 +112,12 @@ export function handleMarketExited(event: MarketExited): void {
   status.timestamp = event.block.timestamp
   status.entered = false
   status.save()
+}
+
+export function handleDistributedSupplierComp(event: DistributedSupplierComp): void {
+  updateCompRewards(event.params.supplier, event.params.compDelta)
+}
+
+export function handleDistributedBorrowerComp(event: DistributedBorrowerComp): void {
+  updateCompRewards(event.params.borrower, event.params.compDelta)
 }

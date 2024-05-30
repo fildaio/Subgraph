@@ -19,7 +19,6 @@ import {
   Liquidate,
   Transfer as TransferEvent,
   EventLength,
-  User,
   AccrueInterest as AccrueInEvent,
   TokenInterest
 } from "../generated/schema"
@@ -36,23 +35,21 @@ import {
   BI_18
 } from './helper'
 
+import {
+  getUser
+} from "./entities/user"
+
 const EVENT_LENGTH_ID = "event length"
 
 function updateTokenInterest(event: Borrow): void {
-  let accrueIn = AccrueInEvent.load(event.transaction.hash.toHex())
+  let accrueIn = AccrueInEvent.load(event.address.toHex().concat("_AccrueInterest"))
   if (!accrueIn) {
     return
   }
 
-  let userId = event.params.borrower.toHex()
-  let user = User.load(userId)
-  // user not exist
-  if (!user) {
-    user = new User(userId)
-    user.save()
-  }
+  let user = getUser(event.params.borrower)
 
-  let id = event.address.toHex().concat("_").concat(userId)
+  let id = event.address.toHex().concat("_").concat(event.params.borrower.toHex())
   let tokenInterest = TokenInterest.load(id)
   if (!tokenInterest) {
     let ctoken = Token.load(event.address.toHex())
@@ -68,12 +65,7 @@ function updateTokenInterest(event: Borrow): void {
 }
 
 export function handleBorrow(event: Borrow): void {
-  let user = User.load(event.params.borrower.toHex())
-  // user not exist
-  if (!user) {
-    user = new User(event.params.borrower.toHex())
-    user.save()
-  }
+  let user = getUser(event.params.borrower)
 
   let ctoken = Token.load(event.address.toHex())
   // get ctoken failed,exit
@@ -127,21 +119,14 @@ export function handleBorrow(event: Borrow): void {
 }
 
 export function handleLiquidateBorrow(event: LiquidateBorrow): void {
-  let liquidator = User.load(event.params.liquidator.toHex())
-  if (!liquidator) {
-    liquidator = new User(event.params.liquidator.toHex())
-    liquidator.save()
-  }
+  let liquidator = getUser(event.params.liquidator)
 
   let collateral = Token.load(event.params.cTokenCollateral.toHex())
   // get collateral token failed,exit
   if (!collateral) return
 
-  let borrower = User.load(event.params.borrower.toHex())
-  if (!borrower) {
-    borrower = new User(event.params.borrower.toHex())
-    borrower.save()
-  }
+
+  let borrower = getUser(event.params.borrower)
 
   let ctoken = Token.load(event.address.toHex())
   // get ctoken failed,exit
@@ -191,11 +176,7 @@ export function handleLiquidateBorrow(event: LiquidateBorrow): void {
 }
 
 export function handleMint(event: Mint): void {
-  let user = User.load(event.params.minter.toHex())
-  if (!user) {
-    user = new User(event.params.minter.toHex())
-    user.save()
-  }
+  let user = getUser(event.params.minter)
 
   let token = Token.load(event.address.toHex())
   if (!token) return
@@ -243,11 +224,7 @@ export function handleMint(event: Mint): void {
 }
 
 export function handleRedeem(event: Redeem): void {
-  let user = User.load(event.params.redeemer.toHex())
-  if (!user) {
-    user = new User(event.params.redeemer.toHex())
-    user.save()
-  }
+  let user = getUser(event.params.redeemer)
 
   let token = Token.load(event.address.toHex())
   if (!token) return
@@ -296,11 +273,7 @@ export function handleRedeem(event: Redeem): void {
 }
 
 export function handleRepayBorrow(event: RepayBorrow): void {
-  let user = User.load(event.params.borrower.toHex())
-  if (!user) {
-    user = new User(event.params.borrower.toHex())
-    user.save()
-  }
+  let user = getUser(event.params.borrower)
 
   let ctoken = Token.load(event.address.toHex())
   // get ctoken failed,exit
@@ -321,11 +294,7 @@ export function handleRepayBorrow(event: RepayBorrow): void {
     eventLength.transfer = ZERO_BI
   }
 
-  let payer = User.load(event.params.payer.toHex())
-  if (!payer) {
-    payer = new User(event.params.payer.toHex())
-    payer.save()
-  }
+  let payer = getUser(event.params.payer)
 
   let repayEvent = new RepayEvent(event.transaction.hash.toHex().concat("_Repay_").concat(eventLength.repay.toString()))
   repayEvent.repayAmount = convertTokenToDecimal(event.params.repayAmount, token.decimals)
@@ -360,11 +329,7 @@ export function handleTransfer(event: Transfer): void {
   // ignore Mint and Redeem event transfer
   if (event.params.from.toHex() == event.address.toHex() || event.params.to.toHex() == event.address.toHex()) return
 
-  let from = User.load(event.params.from.toHex())
-  if (!from) {
-    from = new User(event.params.from.toHex())
-    from.save()
-  }
+  let from = getUser(event.params.from)
 
   let token = Token.load(event.address.toHex())
   if (!token) return
@@ -384,11 +349,7 @@ export function handleTransfer(event: Transfer): void {
   tokenBalance.amount = tokenBalance.amount.minus(amount)
   tokenBalance.save()
 
-  let to = User.load(event.params.to.toHex())
-  if (!to) {
-    to = new User(event.params.to.toHex())
-    to.save()
-  }
+  let to = getUser(event.params.to)
 
   // token address_account address_handler
   let toBalanceID = event.address.toHex().concat("_").concat(event.params.to.toHex()).concat("_Deposit")
@@ -433,20 +394,17 @@ export function handleAccrueInterest(event: AccrueInterest): void {
   let token = Token.load(event.address.toHex())
   if (!token) return
 
-  let user = User.load(event.transaction.from.toHexString())
-  if (!user) {
-    user = new User(event.transaction.from.toHexString())
-    user.save()
+  let id = event.address.toHex().concat("_AccrueInterest")
+  let accrueIn = AccrueInEvent.load(id)
+  if (!accrueIn) {
+    accrueIn = new AccrueInEvent(id)
+    accrueIn.token = token.id
   }
-
-  let accrueIn = new AccrueInEvent(event.transaction.hash.toHex())
   accrueIn.cashPrior = event.params.cashPrior
   accrueIn.interestAccumulated = event.params.interestAccumulated
   accrueIn.borrowIndex = event.params.borrowIndex
   accrueIn.totalBorrows = event.params.totalBorrows
   accrueIn.timestamp = event.block.timestamp
-  accrueIn.token = token.id
-  accrueIn.user = user.id
   accrueIn.save()
 }
 

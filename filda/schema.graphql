@@ -107,6 +107,7 @@ type Transfer @entity {
 type User @entity {
   "account address"
   id: ID!
+  compRewards: BigInt!
   tokenBalances: [TokenBalance!]! @derivedFrom(field: "user")
   mints: [Mint!]! @derivedFrom(field: "minter")
   redeems: [Redeem!]! @derivedFrom(field: "redeemer")
@@ -116,12 +117,11 @@ type User @entity {
   transferOut: [Transfer!]! @derivedFrom(field: "from")
   liquidate: [Liquidate!]! @derivedFrom(field: "borrower")
   tokenInterests: [TokenInterest!]! @derivedFrom(field: "user")
-  accrueInterests: [AccrueInterest!]! @derivedFrom(field: "user")
   marketStatuses: [MarketStatus!]! @derivedFrom(field: "user")
 }
 
 type AccrueInterest @entity {
-  "transaction hash"
+  "ctoken address_AccrueInterest"
   id: ID!
   cashPrior: BigInt!
   interestAccumulated: BigInt!
@@ -129,7 +129,6 @@ type AccrueInterest @entity {
   totalBorrows: BigInt!
   timestamp: BigInt!
   token: Token!
-  user: User!
 }
 
 type TokenInterest @entity {
