@@ -1,4 +1,4 @@
-import { BigInt , log} from "@graphprotocol/graph-ts"
+import { BigInt, Address, log} from "@graphprotocol/graph-ts"
 import {
   CToken,
   Borrow,
@@ -41,18 +41,18 @@ import {
 
 const EVENT_LENGTH_ID = "event length"
 
-function updateTokenInterest(event: Borrow): void {
-  let accrueIn = AccrueInEvent.load(event.address.toHex().concat("_AccrueInterest"))
+function updateTokenInterest(token: Address, account: Address): void {
+  let accrueIn = AccrueInEvent.load(token.toHex().concat("_AccrueInterest"))
   if (!accrueIn) {
     return
   }
 
-  let user = getUser(event.params.borrower)
+  let user = getUser(account)
 
-  let id = event.address.toHex().concat("_").concat(event.params.borrower.toHex())
+  let id = token.toHex().concat("_").concat(account.toHex())
   let tokenInterest = TokenInterest.load(id)
   if (!tokenInterest) {
-    let ctoken = Token.load(event.address.toHex())
+    let ctoken = Token.load(token.toHex())
     if (!ctoken) return
 
     tokenInterest = new TokenInterest(id)
@@ -115,7 +115,7 @@ export function handleBorrow(event: Borrow): void {
   tokenBalance.amount = convertTokenToDecimal(event.params.accountBorrows, token.decimals)
   tokenBalance.save()
 
-  updateTokenInterest(event)
+  updateTokenInterest(event.address, event.params.borrower);
 }
 
 export function handleLiquidateBorrow(event: LiquidateBorrow): void {
@@ -323,6 +323,8 @@ export function handleRepayBorrow(event: RepayBorrow): void {
 
   tokenBalance.amount = convertTokenToDecimal(event.params.accountBorrows, token.decimals);
   tokenBalance.save()
+
+  updateTokenInterest(event.address, event.params.borrower);
 }
 
 export function handleTransfer(event: Transfer): void {
