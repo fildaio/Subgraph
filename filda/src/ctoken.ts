@@ -161,18 +161,9 @@ export function handleLiquidateBorrow(event: LiquidateBorrow): void {
   eventLength.liquidate = eventLength.liquidate.plus(ONE_BI)
   eventLength.save()
 
-  // only handle borrower borrow reduce, the collateral amount handled in transfer event
-  let borrowBalanceID = ctoken.underlying.toHex().concat("_").concat(event.params.borrower.toHex()).concat("_Loan")
-  let borrowBalance = TokenBalance.load(borrowBalanceID)
-  if (!borrowBalance) {
-    borrowBalance = new TokenBalance(borrowBalanceID)
-    borrowBalance.handler = "Loan"
-    borrowBalance.user = borrower.id
-    borrowBalance.token = ctoken.id
-    borrowBalance.amount = ZERO_BD
-  }
-  borrowBalance.amount = borrowBalance.amount.minus(convertTokenToDecimal(event.params.repayAmount, underlyingToken.decimals))
-  borrowBalance.save()
+  // we don't handle borrower borrow and collateral amount decreace here
+  // the borrow amount decreased in repay event
+  // the collateral amount handled in transfer event
 }
 
 export function handleMint(event: Mint): void {
